@@ -28,10 +28,10 @@ CommandLion::App.run do
     end
     
     option :rainbow do
-    	description "STDOUT is much prettier with rainbows!"
-			flag "--rainbow"
-      
-			action do
+      description "STDOUT is much prettier with rainbows!"
+      flag "--rainbow"
+			
+      action do
         require 'lolize/auto'
       end
     end
