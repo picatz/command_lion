@@ -47,16 +47,6 @@ module CommandLion
           end
         end
         puts
-        #if command.is_a? CommandLion::Option
-        #  short = command.flags.long? ? command.flags.short + ", " : command.flags.short
-        #  short_long = "   " + "#{short}#{command.flags.long}".ljust(max_flag - 3)
-        #  puts "#{short_long}  #{command.description}"
-        #else
-        #  puts
-        #  short = command.flags.long? ? command.flags.short + ", " : command.flags.short
-        #  short_long = "#{short}#{command.flags.long}".ljust(max_flag)
-        #  puts "#{short_long}  #{command.description}"
-        #end
       end
     end
 
@@ -71,12 +61,32 @@ module CommandLion
         end
       else
         app.parse
+        threadz = false
         app.commands.each do |cmd|
-          cmd.action.call if cmd.given? and cmd.action?
+          next unless cmd.given?
+          if cmd.threaded?
+            threadz = [] unless threadz
+            threadz << Thread.new do 
+              cmd.before.call if cmd.before?
+              cmd.action.call if cmd.action?
+              cmd.after.call  if cmd.after?
+            end
+          else
+            cmd.before.call if cmd.before?
+            cmd.action.call if cmd.action?
+            cmd.after.call  if cmd.after?
+          end
         end
+        threadz.map(&:join) if threadz
       end
     end
 
+    def self.nsync(&block)
+      @semaphore = Mutex.new unless @semaphore
+      @semaphore.synchronize do
+        block.call
+      end
+    end
 
     # A tiny bit of rainbow magic is included. You can simple include
     # this option within your application and, if you have the `lolize` gem

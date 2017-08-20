@@ -2,7 +2,7 @@ module CommandLion
 
   class Command < Base
     
-    simple_attrs :name, :usage, :description, 
+    simple_attrs :name, :usage, :description, :threaded,
                  :type, :delimiter, :flags, :arguments, 
                  :given, :default, :action, 
                  :options, :before, :after
@@ -49,6 +49,9 @@ module CommandLion
       @after = block
     end
 
+    def threaded
+      @threaded = true
+    end
   end
 
 end
