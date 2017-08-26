@@ -176,6 +176,8 @@ module CommandLion
       case cmd.type
       when :stdin
         args = STDIN.gets.strip
+      when :stdin_stream
+        args = STDIN
       when :stdin_string
         args = STDIN.gets.strip
       when :stdin_strings
@@ -186,7 +188,11 @@ module CommandLion
         args = []
         while arg = STDIN.gets
           next if arg.nil?
-          args << arg.strip.to_i
+          arg = arg.strip
+          parse = arg.to_i
+          if parse.to_s == arg
+            args << parse
+          end
         end
         args
       when :stdin_bool
