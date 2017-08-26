@@ -31,7 +31,39 @@ module CommandLion
     end
     
     def argument
-      arguments#.first
+      if arguments.respond_to?(:each)
+        arguments.each do |argument|
+          # first
+          if block_given?
+            yield argument
+            return
+          else
+            return argument
+          end
+        end
+      else
+        if block_given?
+          yield arguments
+          return
+        else
+          return arguments
+        end
+      end
+      nil
+    end
+
+    def arguments
+      if block_given?
+        if @arguments.respond_to?(:each)
+          arguments.each do |argument|
+            yield argument
+          end
+        else
+          yield @arguments || @default
+        end
+      else
+        @arguments || @default
+      end
     end
 
     def action(&block)
