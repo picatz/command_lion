@@ -81,13 +81,6 @@ module CommandLion
       end
     end
 
-    def self.nsync(&block)
-      @semaphore = Mutex.new unless @semaphore
-      @semaphore.synchronize do
-        block.call
-      end
-    end
-
     # A tiny bit of rainbow magic is included. You can simple include
     # this option within your application and, if you have the `lolize` gem
     # installed, then rainbows will automagically be hooked to STDOUT to make your
@@ -181,6 +174,23 @@ module CommandLion
         args = Raw.arguments_to(cmd.flags.long, flags)
       end
       case cmd.type
+      when :stdin
+        args = STDIN.gets.strip
+      when :stdin_string
+        args = STDIN.gets.strip
+      when :stdin_strings
+        args = STDIN.gets.strip
+      when :stdin_integer
+        args = STDIN.gets.strip.to_i
+      when :stdin_integers
+        args = []
+        while arg = STDIN.gets
+          next if arg.nil?
+          args << arg.strip.to_i
+        end
+        args
+      when :stdin_bool
+        args = STDIN.gets.strip.downcase == "true"
       when :single, :string
         args.first
       when :strings, :multi
@@ -220,7 +230,9 @@ module CommandLion
         end
         args.map { |arg| arg == "true" }
       end
-    rescue # this is dangerous
+    rescue => e# this is dangerous
+      puts e
+      binding.pry
       nil
     end
 
