@@ -2,17 +2,12 @@ $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'command_lion'
 require 'pry'
 
-app = CommandLion::App.build do
+CommandLion::App.run do
 
   name "Hello World"
-  version "1.0.0"
 
-  command "Hello World" do
-    flags do
-      short "-hw"
-      long  "--hello-world"
-    end
-
+  command :hello_world do
+    flag "--hello-world"
     action do
       puts "Hello World!"
     end
@@ -20,4 +15,3 @@ app = CommandLion::App.build do
 
 end
 
-app.run!
