@@ -173,6 +173,7 @@ module CommandLion
       if args.empty?
         args = Raw.arguments_to(cmd.flags.long, flags)
       end
+      return nil if args.nil?
       case cmd.type
       when :stdin
         args = STDIN.gets.strip
