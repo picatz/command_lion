@@ -4,7 +4,7 @@ module CommandLion
 
     class << self
       # Build up an object with a given block.
-      # @param attribute [&block]
+      # @param [&block]
       # 
       # == Basic Usage
       #  class Example < CommandLion::Base
