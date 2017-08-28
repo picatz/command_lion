@@ -1,17 +1,87 @@
 module CommandLion
 
+
+  # == DSL Keywords:
+  # name::
+  #   The name of your application. This is how your application would be referenced in conversation.
+  #   It's also going to be used as the defualt banner for the application which will appear at the 
+  #   top of the help menu.
+  #   
+  #   == Example
+  #     app = CommandLion::App.build do
+  #       name "Example"
+  #     end
+  #     
+  #     app.name?
+  #     # => true
+  #
+  #     app.name = "Changed Name"
+  #     # => "Changed Name"
+  #
+  #     app.name
+  #     # => Changed Name
+  # usage::
+  #   Your usage string can be used to help show the basic information for how to use your application.
+  #   You can make this as simple or as complex as you like. One will be generated for you by default
+  #   when your application runs, but won't be pre-built for you inside the build block for now.
+  #
+  #   == Example
+  #     app = CommandLion::App.build do
+  #       usage "example [commands] [options...]"
+  #     end
+  #     
+  #     app.usage?
+  #     # => true
+  #
+  #     app.usage = <<USAGE
+  #         /|
+  #     ~~~/ |~
+  #     tsharky [command] [switches] [--] [arguments]
+  #     USAGE
+  #     # => "    /|\n" + "~~~/ |~\n" + "tsharky [command] [switches] [--] [arguments]\n"
+  #
+  #     app.usage
+  #     # => "    /|\n" + "~~~/ |~\n" + "tsharky [command] [switches] [--] [arguments]\n"
+  #
+  #     puts app.usage
+  #     #     /|
+  #     # ~~~/ |~
+  #     # tsharky [command] [switches] [--] [arguments]
+  # description::
+  #   To provide further context for your application's existence, it's fairly nice to have a description.
+  #   Like, the usage statement, this can be as complex or as simple as you would like. It isn't required either.
+  #   
+  #   == Example
+  #     app = CommandLion::App.build do
+  #       description "Example"
+  #     end
+  #     
+  #     app.description?
+  #     # => true
+  #
+  #     app.description = "Changed"
+  #     # => "Changed"
+  #
+  #     app.description
+  #     # => Changed
   class App < Base
 
     def self.default_help(app)
-      flagz = app.commands.map do |cmd|
-        if cmd.flags.long?
-          cmd.flags.short + cmd.flags.long
-        else  
-          cmd.flags.short
-        end  
+      flagz = app.commands.map do |_, cmd|
+        if cmd.flags?
+          if cmd.flags.long?
+            cmd.flags.short + cmd.flags.long
+          else  
+            cmd.flags.short
+          end  
+        elsif cmd.index?
+          cmd.index.to_s if cmd.index?
+        else
+          raise "No flags or index was given!"
+        end
       end 
       max_flag = flagz.map(&:length).max + 2
-      max_desc = app.commands.map(&:description).select{|d| d unless d.nil? }.map(&:length).max
+      max_desc = app.commands.values.map(&:description).select{|d| d unless d.nil? }.map(&:length).max
       puts app.name
       if app.version?
         puts
@@ -22,21 +92,22 @@ module CommandLion
         puts 
         puts "DESCRIPTION"
         puts app.description
+        puts
       end
       if app.usage?
         puts
-        puts usage
-        puts
-      else
-        puts
         puts "USAGE"
-        puts "#{$PROGRAM_NAME} [command] [arguments...] [options]"
+        puts usage
         puts
       end
       puts "COMMANDS"
-      app.commands.select { |cmd| cmd unless cmd.is_a? CommandLion::Option }.each do |command|
-        short = command.flags.long? ? command.flags.short + ", " : command.flags.short
-        short_long = "#{short}#{command.flags.long}".ljust(max_flag)
+      app.commands.values.select { |cmd| cmd unless cmd.is_a? CommandLion::Option }.each do |command|
+        if command.flags?
+          short = command.flags.long? ? command.flags.short + ", " : command.flags.short
+          short_long = "#{short}#{command.flags.long}".ljust(max_flag)
+        else
+          short_long = "#{command.index.to_s}".ljust(max_flag)
+        end
         puts "#{short_long}  #{command.description}"
         if command.options?
           #binding.pry
@@ -62,7 +133,7 @@ module CommandLion
       else
         app.parse
         threadz = false
-        app.commands.each do |cmd|
+        app.commands.each do |_, cmd|
           next unless cmd.given?
           if cmd.threaded?
             threadz = [] unless threadz
@@ -119,14 +190,24 @@ module CommandLion
     #
     # app.commands.map(&:name)
     # # => [:example1, :example2]
-    def command(name, &block)
-      cmd = Command.new
-      cmd.name = name
-      cmd.instance_eval(&block)
-      @commands = [] unless @commands
+    def command(index, &block)
+      if index.is_a? Command
+        cmd = index
+      else
+        cmd = Command.new
+        cmd.index= index
+        cmd.instance_eval(&block)
+      end
+      @commands = {} unless @commands
       @flags = [] unless @flags
-      @flags << cmd.flags.short if cmd.flags.short?
-      @flags << cmd.flags.long  if cmd.flags.long?
+      if cmd.flags?
+        @flags << cmd.flags.short if cmd.flags.short?
+        @flags << cmd.flags.long  if cmd.flags.long?
+      elsif cmd.index # just use index
+        @flags << cmd.index.to_s
+      else
+        raise "No index or flags were given to use this command."
+      end
       if cmd.options?
         cmd.options.each do |_, option|
           @flags << option.flags.short if cmd.flags.short?
@@ -134,8 +215,13 @@ module CommandLion
           @commands << option
         end
       end
-      @commands << cmd
+      @commands[cmd.index] = cmd
       cmd
+    end
+
+    # Plugin a command.
+    def plugin(command)
+      command(command)
     end
 
     # Direct access to the various flags an application has.
@@ -150,9 +236,13 @@ module CommandLion
 
     # Parse arguments off of ARGV.
     def parse
-      @commands.each do |cmd|
-        next unless index = ARGV.index(cmd.flags.short) or ARGV.index(cmd.flags.long)
-        cmd.given = true
+      @commands.each do |_, cmd|
+        if cmd.flags?
+          next unless argv_index = ARGV.index(cmd.flags.short) or ARGV.index(cmd.flags.long)
+        else
+          next unless argv_index = ARGV.index(cmd.index.to_s)
+        end
+        cmd.given = true unless argv_index.nil?
         if cmd.type.nil?
           yield cmd if block_given?
         else
@@ -239,7 +329,6 @@ module CommandLion
       end
     rescue => e# this is dangerous
       puts e
-      binding.pry
       nil
     end
 
