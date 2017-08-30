@@ -110,10 +110,13 @@ module CommandLion
         end
         puts "#{short_long}  #{command.description}"
         if command.options?
-          #binding.pry
           command.options.each do |_, option|
-            short = option.flags.long? ? option.flags.short + ", " : option.flags.short
-            short_long = "  " + "#{short}#{option.flags.long}".ljust(max_flag - 2)
+            if option.flags?
+              short = option.flags.long? ? option.flags.short + ", " : option.flags.short
+              short_long = "  " + "#{short}#{option.flags.long}".ljust(max_flag - 2)
+            else
+              short_long = "  " + "#{option.index.to_s}".ljust(max_flag - 2)
+            end
             puts "#{short_long}  #{option.description}"
           end
         end
@@ -210,9 +213,14 @@ module CommandLion
       end
       if cmd.options?
         cmd.options.each do |_, option|
-          @flags << option.flags.short if cmd.flags.short?
-          @flags << option.flags.long  if cmd.flags.long?
-          @commands << option
+          if option.flags?
+            @flags << option.flags.short if cmd.flags.short?
+            @flags << option.flags.long  if cmd.flags.long?
+          else # just use index
+            @flags << option.index.to_s
+          end
+          @commands[option.index] = option
+          #@commands << option
         end
       end
       @commands[cmd.index] = cmd
@@ -259,9 +267,13 @@ module CommandLion
 
     # Parse a given command with its 
     def parse_cmd(cmd, flags)
-      args = Raw.arguments_to(cmd.flags.short, flags)
-      if args.empty?
-        args = Raw.arguments_to(cmd.flags.long, flags)
+      if cmd.flags?
+        args = Raw.arguments_to(cmd.flags.short, flags)
+        if args.empty?
+          args = Raw.arguments_to(cmd.flags.long, flags)
+        end
+      else
+        args = Raw.arguments_to(cmd.index.to_s, flags)
       end
       return nil if args.nil?
       case cmd.type
