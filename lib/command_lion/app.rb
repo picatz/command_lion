@@ -1,6 +1,23 @@
 module CommandLion
 
-
+  # The App class provides what can be considered the "main" function for the a Command Lion application.
+  # 
+  # The App class is primarily used in one of two ways:
+  #
+  # == Building Block
+  # To build an application using the DSL, but not run it right away, the build method block is available.
+  #   app = CommandLion::App.build do
+  #     # ...
+  #   end
+  #
+  #   app.run!
+  #
+  # == Run Block
+  # To build, parse, and run everything in one concise block, the run method block is available.
+  #   CommandLion::App.run do
+  #     # ...
+  #   end
+  #
   # == DSL Keywords:
   # name::
   #   The name of your application. This is how your application would be referenced in conversation.
@@ -179,20 +196,21 @@ module CommandLion
 
     # An application usually has multiple commands.
     #
-    # app = CommandLion::App.build
-    #   # meta information
-    #   
-    #   command :example1 do
-    #     # more code
+    # == Example
+    #   app = CommandLion::App.build
+    #     # meta information
+    #     
+    #     command :example1 do
+    #       # more code
+    #     end
+    #
+    #     command :example2 do
+    #       # more code
+    #     end
     #   end
     #
-    #   command :example2 do
-    #     # more code
-    #   end
-    # end
-    #
-    # app.commands.map(&:name)
-    # # => [:example1, :example2]
+    #   app.commands.map(&:name)
+    #   # => [:example1, :example2]
     def command(index, &block)
       if index.is_a? Command
         cmd = index
@@ -227,22 +245,26 @@ module CommandLion
       cmd
     end
 
-    # Plugin a command.
+    # Plugin a command that's probably been built outside of the application's run or build block.
+    # This is helpful for sharing or reusing commands in applications.
+    # @param command [Command] 
     def plugin(command)
       command(command)
     end
 
-    # Direct access to the various flags an application has.
+    # Direct access to the various flags an application has. Helpfulp for debugging.
     def flags
       @flags
     end
 
-    # Direct access to the various commands an application has.
+    # Direct access to the various commands an application has. Helpful for debugging.
     def commands
       @commands
     end
 
     # Parse arguments off of ARGV.
+    #
+    # @TODO Re-visit this.
     def parse
       @commands.each do |_, cmd|
         if cmd.flags?
@@ -266,6 +288,7 @@ module CommandLion
     end
 
     # Parse a given command with its 
+    # @TODO Re-visit this.
     def parse_cmd(cmd, flags)
       if cmd.flags?
         args = Raw.arguments_to(cmd.flags.short, flags)
@@ -344,12 +367,15 @@ module CommandLion
       nil
     end
 
+    # @TODO Re-visit this.
     def run!
       parse do |cmd|
         cmd.action.call
       end 
     end
 
+    # Run the application if the file is the main file being run.
+    # It's almost kind of narcisitc, if you think about it.
     if __FILE__== $0
       run!
     end
