@@ -7,8 +7,8 @@ module CommandLion
   #   cmd = CommandLion::Command.build do
   #     # ...
   #   end
-  # This is used under the hood within an Application's DSL block:
-  # == ⚙️  Application Run Block
+  # This is used under the hood within an Application's DSL run or block:
+  # == ⚙️  Application Build Block
   #   app = CommandLion::App.build do
   #     command :example_index do
   #       # ...
