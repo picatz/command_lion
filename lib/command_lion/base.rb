@@ -1,5 +1,7 @@
 module CommandLion
 
+  # To encapsulate some of the common patterns within Command Lion, there is a Base
+  # class which both the App and Command class inhereit from. 
   class Base
 
     class << self
