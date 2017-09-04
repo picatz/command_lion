@@ -19,8 +19,14 @@ CommandLion::App.run do
 
   command :hello do
     description "A simple command to say hello!"
+    
     type :string
-    flag "hello"
+
+    flags do
+      short "-h"
+      long  "--hello" 
+    end
+
     default "world"
 
     action do
