@@ -145,14 +145,18 @@ module CommandLion
     def self.run(&block)
       app = new
       app.instance_eval(&block)
+      app.parse
       if ARGV.empty?
-        if app.help?
-          puts app.help
+        if cmd = app.commands[:help]
+          cmd.before.call if cmd.before?
+          cmd.action.call if cmd.action?
+          cmd.after.call  if cmd.after?
+          # maybe exit?
         else
-          default_help(app)
+          default_help(app) unless app.default_help_menu_removed?
         end
       else
-        app.parse
+        #binding.pry
         threadz = false
         app.commands.each do |_, cmd|
           next unless cmd.given?
@@ -172,6 +176,21 @@ module CommandLion
         threadz.map(&:join) if threadz
       end
     end
+
+    def help?
+      binding.pry
+      return true if @commands[:help]
+      false
+    end
+
+    def remove_default_help_menu
+      @remove_default_help_menu = true
+    end
+
+    def default_help_menu_removed?
+      @remove_default_help_menu || false
+    end
+
 
     # A tiny bit of rainbow magic is included. You can simple include
     # this option within your application and, if you have the `lolize` gem
@@ -245,6 +264,11 @@ module CommandLion
       @commands[cmd.index] = cmd
       cmd
     end
+
+    def help(&block)
+      command :help, &block
+    end
+
 
     # Plugin a command that's probably been built outside of the application's run or build block.
     # This is helpful for sharing or reusing commands in applications.
