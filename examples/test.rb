@@ -6,6 +6,8 @@ CommandLion::App.run do
 
   name "Printr"
 
+  version "1.0.0"
+
   command :print do
     type :string
     

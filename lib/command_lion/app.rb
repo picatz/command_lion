@@ -100,10 +100,11 @@ module CommandLion
       max_flag = flagz.map(&:length).max + 2
       max_desc = app.commands.values.map(&:description).select{|d| d unless d.nil? }.map(&:length).max
       puts app.name
+      puts
       if app.version?
-        puts
         puts "VERSION"
         puts app.version
+        puts
       end
       if app.description?
         puts 
