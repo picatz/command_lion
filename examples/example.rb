@@ -20,7 +20,10 @@ CommandLion::App.run do
     end
     
     option :rainbow do
-      flag "--rainbow"
+      flags do
+        short "-r"
+        long  "--rainbow"
+      end
       action do
         require 'lolize/auto'
       end
