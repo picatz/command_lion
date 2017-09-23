@@ -232,8 +232,8 @@ module CommandLion
       if cmd.options?
         cmd.options.each do |_, option|
           if option.flags?
-            @flags << option.flags.short if cmd.flags.short?
-            @flags << option.flags.long  if cmd.flags.long?
+            @flags << option.flags.short if option.flags.short?
+            @flags << option.flags.long  if option.flags.long?
           else # just use index
             @flags << option.index.to_s
           end
@@ -268,7 +268,8 @@ module CommandLion
     def parse
       @commands.each do |_, cmd|
         if cmd.flags?
-          next unless argv_index = ARGV.index(cmd.flags.short) or ARGV.index(cmd.flags.long)
+          # or for the || seems to not do what I want it to do...
+          next unless argv_index = ARGV.index(cmd.flags.short) || ARGV.index(cmd.flags.long)
         else
           next unless argv_index = ARGV.index(cmd.index.to_s)
         end
@@ -298,7 +299,10 @@ module CommandLion
       else
         args = Raw.arguments_to(cmd.index.to_s, flags)
       end
+      #binding.pry
+      #
       return nil if args.nil?
+      #binding.pry
       case cmd.type
       when :stdin
         args = STDIN.gets.strip
@@ -307,7 +311,13 @@ module CommandLion
       when :stdin_string
         args = STDIN.gets.strip
       when :stdin_strings
-        args = STDIN.gets.strip
+        args = []
+        while arg = STDIN.gets
+          next if arg.nil?
+          arg = arg.strip
+          args << arg
+        end
+        args
       when :stdin_integer
         args = STDIN.gets.strip.to_i
       when :stdin_integers
@@ -324,7 +334,7 @@ module CommandLion
       when :stdin_bool
         args = STDIN.gets.strip.downcase == "true"
       when :single, :string
-        args.first
+        args = args.first
       when :strings, :multi
         if cmd.delimiter?
           if args.count > 1
@@ -338,7 +348,7 @@ module CommandLion
         end
         args
       when :integer
-        args.first.to_i
+        args = args.first.to_i
       when :integers
         if cmd.delimiter?
           if args.count > 1
@@ -349,7 +359,7 @@ module CommandLion
             args = args.map { |arg| arg.split(cmd.delimiter) }.flatten
           end
         end
-        args.map(&:to_i)
+        args = args.map(&:to_i)
       when :bool, :bools
         if cmd.delimiter?
           if args.count > 1
@@ -360,7 +370,7 @@ module CommandLion
             args = args.map { |arg| arg.split(cmd.delimiter) }.flatten
           end
         end
-        args.map { |arg| arg == "true" }
+        args = args.map { |arg| arg == "true" }
       end
     rescue => e# this is dangerous
       puts e
