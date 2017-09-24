@@ -189,19 +189,21 @@ module CommandLion
       end
     end
 
+    # Check if there has been an indexed help command.
     def help?
       return true if @commands[:help]
       false
     end
 
+    # Explicitly remove the default help menu from the application.
     def remove_default_help_menu
       @remove_default_help_menu = true
     end
 
+    # Check if the default help menu for the application has been explicitly removed.
     def default_help_menu_removed?
       @remove_default_help_menu || false
     end
-
 
     # A tiny bit of rainbow magic is included. You can simple include
     # this option within your application and, if you have the `lolize` gem
