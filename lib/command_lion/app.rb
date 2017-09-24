@@ -331,7 +331,7 @@ module CommandLion
     def parse_cmd(cmd, flags)
       if cmd.flags?
         args = Raw.arguments_to(cmd.flags.short, flags)
-        if args.empty?
+        if args.nil? || args.empty?
           args = Raw.arguments_to(cmd.flags.long, flags)
         end
       else

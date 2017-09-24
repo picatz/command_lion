@@ -24,7 +24,10 @@ CommandLion::App.run do
     
     option :ignore do
       description "Optionally ignore one person."
-      flag "--ignore"
+      flags do
+        short "-i"
+        long  "--ignore"
+      end
       type :string
     end
   end
