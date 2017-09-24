@@ -142,21 +142,33 @@ module CommandLion
       end
     end
 
+    # This run method is a pretty important method when using command lion typically.
+    #
+    # Under the hood, an application object is initialized. The block of code passed to
+    # this method is then used as the code that is ran in the context of a application 
+    # object. So all of those methods will be available.
+    #
     def self.run(&block)
+      # Initialize an instance of an App object.
       app = new
+      # Evaluate the block of code within the context of that App object.
       app.instance_eval(&block)
+      # Parse the application logic out.
       app.parse
+      # Sometimes a command-line application is run without being given any arguments.
       if ARGV.empty?
+        # Default to a help menu.
         if cmd = app.commands[:help]
           cmd.before.call if cmd.before?
           cmd.action.call if cmd.action?
           cmd.after.call  if cmd.after?
           # maybe exit?
         else
+          # Use the default help menu for the application unless that's been
+          # explictly removed by the author for whatever reason.
           default_help(app) unless app.default_help_menu_removed?
         end
       else
-        #binding.pry
         threadz = false
         app.commands.each do |_, cmd|
           next unless cmd.given?
@@ -178,7 +190,6 @@ module CommandLion
     end
 
     def help?
-      binding.pry
       return true if @commands[:help]
       false
     end
@@ -324,10 +335,7 @@ module CommandLion
       else
         args = Raw.arguments_to(cmd.index.to_s, flags)
       end
-      #binding.pry
-      #
       return nil if args.nil?
-      #binding.pry
       case cmd.type
       when :stdin
         args = STDIN.gets.strip
