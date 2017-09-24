@@ -1,3 +1,3 @@
 module CommandLion
-  VERSION = "1.0.3geff"
+  VERSION = "1.0.4"
 end
