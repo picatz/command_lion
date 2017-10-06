@@ -143,12 +143,9 @@ module CommandLion
       end
     end
 
-    # This run method is a pretty important method when using command lion typically.
-    #
-    # Under the hood, an application object is initialized. The block of code passed to
-    # this method is then used as the code that is ran in the context of a application 
-    # object. So all of those methods will be available.
-    #
+    
+    # The run method will run a given block of code using the
+    # Commmand Lion DSL.
     def self.run(&block)
       # Initialize an instance of an App object.
       app = new
@@ -163,7 +160,7 @@ module CommandLion
           cmd.before.call if cmd.before?
           cmd.action.call if cmd.action?
           cmd.after.call  if cmd.after?
-          # maybe exit?
+          # @TODO maybe exit?
         else
           # Use the default help menu for the application unless that's been
           # explictly removed by the author for whatever reason.
@@ -283,7 +280,6 @@ module CommandLion
       command :help, &block
     end
 
-
     # Plugin a command that's probably been built outside of the application's run or build block.
     # This is helpful for sharing or reusing commands in applications.
     # @param command [Command] 
@@ -327,7 +323,7 @@ module CommandLion
       end
     end
 
-    # Parse a given command with its 
+    # Parse a given command with its given flags. 
     # @TODO Re-visit this.
     def parse_cmd(cmd, flags)
       if cmd.flags?
