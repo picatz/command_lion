@@ -6,6 +6,7 @@ CommandLion::App.run do
 
   name "Rainbow Hello"
   version "1.0.0"
+  description "Need to test this!"
 
   command :hello do
     description "A simple option to say hello!"
