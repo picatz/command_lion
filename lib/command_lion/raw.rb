@@ -31,8 +31,9 @@ module CommandLion
     def self.arguments_to(string, flags)
       return if string.nil?
       return if flags.nil?
+      return unless index = index_of(string)
       if block_given?
-        arguments.drop(index_of(string)+1).each do |argument|
+        arguments.drop(index+1).each do |argument|
           # next if argument == ","
           break if flags.include?(argument)
           yield argument
