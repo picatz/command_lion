@@ -1,86 +1,5 @@
 module CommandLion
 
-  # The App class provides what can be considered the "main" function for the a Command Lion application.
-  # 
-  # The App class is primarily used in one of two ways:
-  #
-  # == Building Block
-  # To build an application using the DSL, but not run it right away, the build method block is available.
-  #   app = CommandLion::App.build do
-  #     # ...
-  #   end
-  #
-  #   app.run!
-  #
-  # == Run Block
-  # To build, parse, and run everything in one concise block, the run method block is available.
-  #   CommandLion::App.run do
-  #     # ...
-  #   end
-  #
-  # == DSL Keywords:
-  # name::
-  #   The name of your application. This is how your application would be referenced in conversation.
-  #   It's also going to be used as the defualt banner for the application which will appear at the 
-  #   top of the help menu.
-  #   
-  #   == Example
-  #     app = CommandLion::App.build do
-  #       name "Example"
-  #     end
-  #     
-  #     app.name?
-  #     # => true
-  #
-  #     app.name = "Changed Name"
-  #     # => "Changed Name"
-  #
-  #     app.name
-  #     # => Changed Name
-  # usage::
-  #   Your usage string can be used to help show the basic information for how to use your application.
-  #   You can make this as simple or as complex as you like. One will be generated for you by default
-  #   when your application runs, but won't be pre-built for you inside the build block for now.
-  #
-  #   == Example
-  #     app = CommandLion::App.build do
-  #       usage "example [commands] [options...]"
-  #     end
-  #     
-  #     app.usage?
-  #     # => true
-  #
-  #     app.usage = <<USAGE
-  #         /|
-  #     ~~~/ |~
-  #     tsharky [command] [switches] [--] [arguments]
-  #     USAGE
-  #     # => "    /|\n" + "~~~/ |~\n" + "tsharky [command] [switches] [--] [arguments]\n"
-  #
-  #     app.usage
-  #     # => "    /|\n" + "~~~/ |~\n" + "tsharky [command] [switches] [--] [arguments]\n"
-  #
-  #     puts app.usage
-  #     #     /|
-  #     # ~~~/ |~
-  #     # tsharky [command] [switches] [--] [arguments]
-  # description::
-  #   To provide further context for your application's existence, it's fairly nice to have a description.
-  #   Like, the usage statement, this can be as complex or as simple as you would like. It isn't required either.
-  #   
-  #   == Example
-  #     app = CommandLion::App.build do
-  #       description "Example"
-  #     end
-  #     
-  #     app.description?
-  #     # => true
-  #
-  #     app.description = "Changed"
-  #     # => "Changed"
-  #
-  #     app.description
-  #     # => Changed
   class App < Base
 
     def self.default_help(app)
@@ -143,7 +62,7 @@ module CommandLion
       end
     end
 
-    
+
     # The run method will run a given block of code using the
     # Commmand Lion DSL.
     def self.run(&block)
@@ -160,30 +79,25 @@ module CommandLion
           cmd.before.call if cmd.before?
           cmd.action.call if cmd.action?
           cmd.after.call  if cmd.after?
-          # @TODO maybe exit?
+          exit 0
         else
           # Use the default help menu for the application unless that's been
           # explictly removed by the author for whatever reason.
           default_help(app) unless app.default_help_menu_removed?
         end
       else
-        threadz = false
         app.commands.each do |_, cmd|
           next unless cmd.given?
-          if cmd.threaded?
-            threadz = [] unless threadz
-            threadz << Thread.new do 
-              cmd.before.call if cmd.before?
-              cmd.action.call if cmd.action?
-              cmd.after.call  if cmd.after?
-            end
-          else
-            cmd.before.call if cmd.before?
-            cmd.action.call if cmd.action?
-            cmd.after.call  if cmd.after?
-          end
+          cmd.options.each do |_, opt|
+            next unless opt.given?
+            opt.before.call if opt.before?
+            opt.action.call if opt.action?
+            opt.after.call  if opt.after?
+          end if cmd.options?
+          cmd.before.call if cmd.before?
+          cmd.action.call if cmd.action?
+          cmd.after.call  if cmd.after?
         end
-        threadz.map(&:join) if threadz
       end
     end
 
@@ -201,19 +115,6 @@ module CommandLion
     # Check if the default help menu for the application has been explicitly removed.
     def default_help_menu_removed?
       @remove_default_help_menu || false
-    end
-
-    # A tiny bit of rainbow magic is included. You can simple include
-    # this option within your application and, if you have the `lolize` gem
-    # installed, then rainbows will automagically be hooked to STDOUT to make your
-    # application much prettier.
-    #
-    # It'd be funny if this was turned on by default and you had to opt-out of the 
-    # rainbows. Good thing I didn't do that, right?
-    def rainbows
-      require 'lolize/auto'
-    rescue
-      raise "The 'lolize' gem is not installed. Install it for rainbow magic!"
     end
 
     # Simple attributes for the application. Mostly just metadata to help
@@ -276,6 +177,10 @@ module CommandLion
       cmd
     end
 
+    def ctrl_c(&block)
+      trap("SIGINT") { block.call }
+    end
+
     def help(&block)
       command :help, &block
     end
@@ -294,7 +199,7 @@ module CommandLion
 
     # Direct access to the various commands an application has. Helpful for debugging.
     def commands
-      @commands
+      @commands.reject { |_, v| v.is_a? CommandLion::Option }
     end
 
     # Parse arguments off of ARGV.
@@ -371,9 +276,6 @@ module CommandLion
         if cmd.delimiter?
           if args.count > 1
             args = args.first.split(cmd.delimiter)
-            #args = args.first.join.split(cmd.delimiter).flatten.select { |arg| arg unless arg.empty? }
-            #args = args.select { |arg| arg if arg.include?(cmd.delimiter) }
-            #args = args.map { |arg| arg.split(cmd.delimiter) }.flatten
           else
             args = args.map { |arg| arg.split(cmd.delimiter) }.flatten
           end
@@ -409,10 +311,18 @@ module CommandLion
       nil
     end
 
-    # @TODO Re-visit this.
     def run!
       parse do |cmd|
-        cmd.action.call
+        next unless cmd.given?
+        cmd.options.each do |_, opt|
+          next unless opt.given?
+          opt.before.call if opt.before?
+          opt.action.call if opt.action?
+          opt.after.call  if opt.after?
+        end if cmd.options?
+        cmd.before.call if cmd.before?
+        cmd.action.call if cmd.action?
+        cmd.after.call  if cmd.after?
       end 
     end
 
