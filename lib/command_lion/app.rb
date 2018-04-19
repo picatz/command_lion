@@ -177,6 +177,10 @@ module CommandLion
       cmd
     end
 
+    def ctrl_c(&block)
+      trap("SIGINT") { block.call }
+    end
+
     def help(&block)
       command :help, &block
     end
