@@ -9,6 +9,11 @@ CommandLion::App.run do
   version "1.0.0"
   description "Pcaprub command-line application to capture network traffic."
 
+  ctrl_c do
+    puts "Exiting!"
+    exit 0
+  end
+
   command :capture do
     description "Capture from a given network interface ( default: #{Pcap.lookupdev} )."
     type :string
@@ -18,7 +23,7 @@ CommandLion::App.run do
       capture = Pcap.open_live(argument, options[:snaplen].argument, options[:promisc].argument, options[:buffer].argument)
       loop do
         if packet = capture.next
-          puts packet
+          puts packet.size
         end
       end
     end
