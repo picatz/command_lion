@@ -239,7 +239,9 @@ module CommandLion
       else
         args = Raw.arguments_to(cmd.index.to_s, flags)
       end
-      return nil if args.nil? and ! cmd.type.to_s =~ /stdin/
+      unless cmd.type.to_s =~ /stdin/
+        return nil if args.nil?
+      end
       case cmd.type
       when :stdin
         args = STDIN.gets.strip
