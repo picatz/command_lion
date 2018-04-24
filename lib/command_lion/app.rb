@@ -3,20 +3,34 @@ module CommandLion
   class App < Base
 
     def self.default_help(app)
-      flagz = app.commands.map do |_, cmd|
+      flagz = []
+      app.commands.each do |_, cmd|
+        if cmd.options?
+          cmd.options.each do |_, opt| 
+            if opt.flags?
+              if opt.flags.long?
+                flagz << opt.flags.short + opt.flags.long
+              else  
+                flagz << opt.flags.short
+              end  
+            elsif opt.index?
+              flagz << opt.index.to_s if opt.index?
+            end
+          end
+        end
         if cmd.flags?
           if cmd.flags.long?
-            cmd.flags.short + cmd.flags.long
+            flagz << cmd.flags.short + cmd.flags.long
           else  
-            cmd.flags.short
+            flagz << cmd.flags.short
           end  
         elsif cmd.index?
-          cmd.index.to_s if cmd.index?
+          flagz << cmd.index.to_s if cmd.index?
         else
           raise "No flags or index was given!"
         end
       end 
-      max_flag = flagz.map(&:length).max + 2
+      max_flag = flagz.map(&:length).max + 4
       max_desc = app.commands.values.map(&:description).select{|d| d unless d.nil? }.map(&:length).max
       puts app.name
       if app.version?
