@@ -184,7 +184,6 @@ module CommandLion
             @flags << option.index.to_s
           end
           @commands[option.index] = option
-          #@commands << option
         end
       end
       @commands[cmd.index] = cmd
