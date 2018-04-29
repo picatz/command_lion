@@ -13,5 +13,8 @@ CommandLion::App.run do
     end
   end
 
+  command :json do
+    flag "--json"
+  end
 end
 
